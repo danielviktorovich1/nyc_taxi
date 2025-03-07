@@ -1,0 +1,73 @@
+# This docker-compose file is combination of Airflow & Postgres (1 - airflow DB, 2 - Taxi DB) & Pgadmin
+services:
+  pgdatabase_airflow:
+    image: postgres:latest
+    container_name: postgres_airflow
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: airflow
+    volumes:
+      - ~/postgres_data_airflow:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+  pgdatabase:
+    image: postgres:latest
+    container_name: postgres_taxi
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: taxi
+    volumes:
+      - ~/postgres_data_taxi:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  pgadmin_airflow:
+    image: dpage/pgadmin4
+    container_name: pgadmin_airflow
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      PGADMIN_DEFAULT_PASSWORD: "root"
+    ports:
+      - "8080:80"
+  airflow-webserver:
+    image: apache/airflow:latest
+    container_name: airflow
+    user: root
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://root:root@pgdatabase_airflow:5432/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+#      - "/use/your/path/to/dags:/opt/airflow/dags"   -   Mount your own folder containing DAG from local host machine and delete comment
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+    ports:
+      - "8081:8080"
+    depends_on:
+      - pgdatabase_airflow
+    command: >
+      bash -c "
+      apt update &&
+      apt install -y openjdk-17-jdk &&
+      su -c 'airflow db migrate' airflow &&
+      if ! airflow users check --username admin; then
+        su -c 'airflow users create --username admin --password admin --firstname Admin --lastname Admin --role Admin --email admin@example.com' airflow;
+      fi &&
+      su -c 'pip install pyspark' airflow &&
+      su -c 'airflow webserver & airflow scheduler' airflow
+      "
+
+
+# To run this docker 
+
+# docker-compose up
+# docker-compose up -d - detached mode to use the terminal
+# docker-compose down - shut down (or Ctrl + C)
+
+# Comands might be helpful after launching the airflow docker
+
+# docker exec -it --user root airflow bash --- root launching airflow docker bash terminal
+# pip install pyspark ---installing pypsark
+# apt update && apt install -y openjdk-17-jdk ---installing java-17
+# airflow scheduler ---launching the scheduler

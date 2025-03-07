@@ -1,0 +1,28 @@
+# Docker compose file for network connection between 2 created PGAdmin and Posgres dockers
+services:
+  pgdatabase:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: taxi
+    volumes:
+      - ~/postgres_data:/var/lib/postgresql/data
+
+    ports:
+      - "5432:5432"
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      PGADMIN_DEFAULT_PASSWORD: "root"
+    ports:
+      - "8080:80"
+
+
+# To launch this file
+# docker-compose up
+# docker-compose up -d - detached mode to use terminal
+# docker-compose down - shut down
